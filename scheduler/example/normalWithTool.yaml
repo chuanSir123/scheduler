@@ -1,0 +1,220 @@
+name: 正常tool聊天
+description: ''
+blocks:
+  - type: internal:chat_memory_query
+    name: 4337938a-bb7c-4b78-b8f4-591418746fc0
+    params:
+      scope_type: group
+    position:
+      x: -79
+      y: 525
+    connected_to:
+      - target: 9fff5990-b964-45ae-b6c7-fe3362a3be98
+        mapping:
+          from: memory_content
+          to: memory_content
+  - type: internal:chat_message_constructor
+    name: 9fff5990-b964-45ae-b6c7-fe3362a3be98
+    params: {}
+    position:
+      x: 368
+      y: 135
+    connected_to:
+      - target: 618ee860-064d-4b25-88dd-3b29a17b52d7
+        mapping:
+          from: llm_msg
+          to: prompt
+  - type: internal:chat_response_converter
+    name: 0ab55e46-0b09-4c3f-acc9-1ceb24a82b66
+    params: {}
+    position:
+      x: 1697
+      y: 127
+    connected_to:
+      - target: 0d6de1fd-2174-4ba3-927e-f15f0dcf829c
+        mapping:
+          from: msg
+          to: msg
+  - type: internal:get_message
+    name: b3bf9f91-2222-4683-9857-298d318ff96c
+    params: {}
+    position:
+      x: 16
+      y: 227
+    connected_to:
+      - target: 9fff5990-b964-45ae-b6c7-fe3362a3be98
+        mapping:
+          from: msg
+          to: user_msg
+      - target: 0d6de1fd-2174-4ba3-927e-f15f0dcf829c
+        mapping:
+          from: sender
+          to: target
+      - target: 4337938a-bb7c-4b78-b8f4-591418746fc0
+        mapping:
+          from: sender
+          to: chat_sender
+      - target: 0037a610-a64b-4d1d-8dff-3685313e9d6e
+        mapping:
+          from: msg
+          to: user_msg
+      - target: 719d2018-6887-42c3-9d3b-43e9c49ed769
+        mapping:
+          from: sender
+          to: chat_sender
+      - target: 9dbc2b74-3adc-4e3f-9362-3abfc457823d
+        mapping:
+          from: msg
+          to: user_msg
+      - target: 7633e8ef-0661-4f08-9d59-791617f775f6
+        mapping:
+          from: sender
+          to: target
+  - type: internal:chat_memory_store
+    name: 9dbc2b74-3adc-4e3f-9362-3abfc457823d
+    params:
+      scope_type: group
+    position:
+      x: 1894
+      y: 305
+  - type: internal:chat_memory_query
+    name: 719d2018-6887-42c3-9d3b-43e9c49ed769
+    params:
+      scope_type: group
+    position:
+      x: 596
+      y: 527
+    connected_to:
+      - target: 0037a610-a64b-4d1d-8dff-3685313e9d6e
+        mapping:
+          from: memory_content
+          to: memory_content
+  - type: internal:send_message
+    name: 0d6de1fd-2174-4ba3-927e-f15f0dcf829c
+    params:
+      im_name: onebot
+    position:
+      x: 1939
+      y: 122
+  - type: auto:url_to_message
+    name: 8bd5a2f0-b598-4384-9ff4-c4976e4ec8e8
+    params: {}
+    position:
+      x: 1385
+      y: 444
+    connected_to:
+      - target: 7633e8ef-0661-4f08-9d59-791617f775f6
+        mapping:
+          from: message
+          to: msg
+  - type: internal:send_message
+    name: 7633e8ef-0661-4f08-9d59-791617f775f6
+    params:
+      im_name: onebot
+    position:
+      x: 1677
+      y: 449
+  - type: internal:chat_completion
+    name: a1ac38d9-d452-477e-bda1-3a37186b651f
+    params:
+      model_name: windsurf/claude-3-7-sonnet
+    position:
+      x: 1340
+      y: 118
+    connected_to:
+      - target: 0ab55e46-0b09-4c3f-acc9-1ceb24a82b66
+        mapping:
+          from: resp
+          to: resp
+      - target: 9dbc2b74-3adc-4e3f-9362-3abfc457823d
+        mapping:
+          from: resp
+          to: llm_resp
+  - type: auto:auto_execute_tools
+    name: 618ee860-064d-4b25-88dd-3b29a17b52d7
+    params:
+      available_block_names: create_task,create_one_time_task,get_tasks,delete_task,delete_all_tasks,text_to_image,web_search_by_keyword,music_search
+      max_retries: 3
+      model_name: windsurf/claude-3-7-sonnet
+    position:
+      x: 654
+      y: 137
+    connected_to:
+      - target: 8bd5a2f0-b598-4384-9ff4-c4976e4ec8e8
+        mapping:
+          from: results
+          to: text
+      - target: 51db7ebd-b200-4834-821a-ec630d4417c2
+        mapping:
+          from: results
+          to: text1
+  - type: internal:chat_message_constructor
+    name: 0037a610-a64b-4d1d-8dff-3685313e9d6e
+    params: {}
+    position:
+      x: 1055
+      y: 414
+    connected_to:
+      - target: a1ac38d9-d452-477e-bda1-3a37186b651f
+        mapping:
+          from: llm_msg
+          to: prompt
+  - type: internal:text_concat_block
+    name: 51db7ebd-b200-4834-821a-ec630d4417c2
+    params: {}
+    position:
+      x: 1048
+      y: 149
+    connected_to:
+      - target: 0037a610-a64b-4d1d-8dff-3685313e9d6e
+        mapping:
+          from: text
+          to: user_prompt_format
+  - type: internal:text_block
+    name: a2e6dcd5-13c5-4f67-88fd-1b7002be7900
+    params:
+      text: "# Information\n\n以下是当前的系统信息：\n当前日期时间：{current_date_time\n}\n\n# Memories\n以下是之前发生过的对话记录。\n-- 对话记录开始 --\n{memory_content}\n-- 对话记录结束 --\n\n"
+    position:
+      x: -54
+      y: 652
+    connected_to:
+      - target: 9fff5990-b964-45ae-b6c7-fe3362a3be98
+        mapping:
+          from: text
+          to: system_prompt_format
+  - type: internal:text_block
+    name: ced49154-770b-481e-a15e-8f89c19ae84a
+    params:
+      text: "# Information\n\n以下是当前的系统信息：\n当前日期时间：{current_date_time\n}\n\n# Memories\n以下是之前发生过的对话记录。\n-- 对话记录开始 --\n{memory_content}\n-- 对话记录结束 --\n\n"
+    position:
+      x: 591
+      y: 657
+    connected_to:
+      - target: 0037a610-a64b-4d1d-8dff-3685313e9d6e
+        mapping:
+          from: text
+          to: system_prompt_format
+  - type: internal:text_block
+    name: b0e7afac-433b-4f28-8ba2-b44368f7212d
+    params:
+      text: '{user_name}说：{user_msg}'
+    position:
+      x: -61
+      y: 380
+    connected_to:
+      - target: 9fff5990-b964-45ae-b6c7-fe3362a3be98
+        mapping:
+          from: text
+          to: user_prompt_format
+  - type: internal:text_block
+    name: 735b1a6d-fce0-4c44-8446-7dfd31e540db
+    params:
+      text: '{user_name}说：{user_msg}'
+    position:
+      x: 592
+      y: 393
+    connected_to:
+      - target: 51db7ebd-b200-4834-821a-ec630d4417c2
+        mapping:
+          from: text
+          to: text2
