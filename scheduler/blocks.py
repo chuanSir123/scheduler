@@ -7,7 +7,7 @@ from kirara_ai.llm.format.response import LLMChatResponse
 from kirara_ai.ioc.container import DependencyContainer
 from kirara_ai.im.adapter import IMAdapter
 from kirara_ai.im.manager import IMManager
-from kirara_ai.im.message import IMMessage, MessageElement, TextMessage, ImageMessage, VoiceMessage, MediaMessage
+from kirara_ai.im.message import IMMessage, MessageElement, TextMessage, ImageMessage, VoiceMessage, MediaMessage,VideoElement
 from kirara_ai.im.sender import ChatSender
 from kirara_ai.llm.llm_manager import LLMManager
 from kirara_ai.llm.llm_registry import LLMAbility
@@ -327,7 +327,7 @@ class AutoExecuteTools(Block):
         for i, action in enumerate(actions):
             try:
                 # 对非第一个action，使用fillParams方法填充参数
-                if i > 0:
+                if i > 0 and action.get("params", {}):
                     action = self.fillParams(action, all_results, llm_manager)
 
                 action_name = action.get("action")
@@ -521,7 +521,10 @@ class URLToMessageBlock(Block):
         self.logger = get_logger("URLToMessageBlock")
 
     def coverAndSendMessage(self, message: str) -> IMMessage:
-        url_pattern = r'https?://[^\s<>\'\"]+|www\.[^\s<>\'\"]+'
+        # 首先替换掉转义的换行符为实际换行符
+        message = message.replace('\\n', '\n')
+        # 修改正则表达式以正确处理换行符分隔的URL
+        url_pattern = r'https?://[^\s\n<>\"\']+|www\.[^\s\n<>\"\']+'
         # 文件扩展名列表
         image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.ico', '.tiff'}
         audio_extensions = {'.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac', '.midi', '.mid'}
@@ -553,7 +556,7 @@ class URLToMessageBlock(Block):
                     elif ext in audio_extensions:
                         message_elements.append(VoiceMessage(url=url))
                     elif ext in video_extensions:
-                        message_elements.append(MediaMessage(url=url))
+                        message_elements.append(VideoElement(file=url))
 
                 except Exception as e:
                     self.logger.error(f"Error processing URL {url}: {str(e)}")

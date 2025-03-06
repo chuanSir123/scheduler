@@ -1,6 +1,6 @@
 # OneBot-adapter for ChatGPT-Mirai-QQ-Bot
 
-本项目是 [ChatGPT-Mirai-QQ-Bot](https://github.com/lss233/chatgpt-mirai-qq-bot) 的一个插件，用于将OneBot协议的消息转换为ChatGPT-Mirai-QQ-Bot的消息格式。
+本项目是 [ChatGPT-Mirai-QQ-Bot](https://github.com/lss233/chatgpt-mirai-qq-bot) 的一个插件，用于在工作流中配置定时任务，同时提供auto_tool的聚合block，实现对定时任务增删查的自动调用。
 
 ## 安装
 
@@ -11,8 +11,7 @@ pip install chatgpt-mirai-qq-bot-scheduler
 ## 使用
 
 在 chatgpt-mirai-qq-bot的web_ui中配置  
-使用示例请参考 [scheduler/example/roleplayWithWebSearch.yml](scheduler/example/roleplayWithWebSearch.yaml)    
-工作流请参考 [示例图片](scheduler/example/workflow.png)
+使用示例请参考 [scheduler/example/normalWithTool.yml](scheduler/example/normalWithTool.yaml)    
 
 ## 开源协议
 
