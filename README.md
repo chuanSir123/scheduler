@@ -1,4 +1,4 @@
-# OneBot-adapter for ChatGPT-Mirai-QQ-Bot
+# scheduler for ChatGPT-Mirai-QQ-Bot
 
 本项目是 [ChatGPT-Mirai-QQ-Bot](https://github.com/lss233/chatgpt-mirai-qq-bot) 的一个插件，用于在工作流中配置定时任务，同时提供auto_tool的聚合block，实现对定时任务增删查的自动调用。
 
