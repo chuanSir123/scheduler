@@ -238,7 +238,7 @@ class AutoExecuteTools(Block):
         for retry in range(self.max_retries):
             try:
                 response = llm.chat(req).choices[0].message.content
-                json_match = re.search(r'(\{[\s\S]*\})', response)
+                json_match = re.search(r'(\{[\s\S]*?\})', response)
                 filled_params =  json.loads(json_match.group(1))
 
                 if filled_params:  # 如果成功解析到参数
@@ -324,12 +324,13 @@ class AutoExecuteTools(Block):
 
         # 执行所有解析出的操作
         all_results = []
+        lastAction = ""
         for i, action in enumerate(actions):
             try:
                 # 对非第一个action，使用fillParams方法填充参数
-                if i > 0 and action.get("params", {}):
+                if i > 0 and action.get("params", {}) and action.get("action") != lastAction:
                     action = self.fillParams(action, all_results, llm_manager)
-
+                lastAction = action.get("action")
                 action_name = action.get("action")
                 params = action.get("params", {})
 
@@ -347,15 +348,16 @@ class AutoExecuteTools(Block):
 
                 # 修改这里：收集所有输出值而不仅仅是"results"
                 if isinstance(execution_result, dict):
-
-                    all_results.append(str(execution_result))
+                    # 将字典转换为 key:value 格式的字符串
+                    result_str = "\n".join([f"{k}:{v}" for k, v in execution_result.items()])
+                    all_results.append(result_str)
                 else:
                     all_results.append(str(execution_result).strip())
             except Exception as e:
                 all_results.append(f"执行 {action_name} 失败: {str(e)}")
 
         # 返回所有结果
-        return {"results": ("你的任务运行结果："+"\n".join(all_results)+"\n") if all_results else "没有可执行的操作\n"}
+        return {"results": ("你的工具调用运行结果："+"\n".join(all_results)+"\n") if all_results else "没有工具调用\n"}
 
 class GetTasksBlock(Block):
     """获取定时任务Block"""
@@ -539,11 +541,11 @@ class URLToMessageBlock(Block):
             message_elements = []
             for url in urls:
                 try:
-                    # 解析URL
+                    # Parse URL
                     parsed = urlparse(url)
                     path = unquote(parsed.path)
 
-                    # 检查扩展名
+                    # Get extension from path
                     ext = None
                     if '.' in path:
                         ext = '.' + path.split('.')[-1].lower()
@@ -553,11 +555,27 @@ class URLToMessageBlock(Block):
                     # 使用URL直接创建消息对象，而不是下载内容
                     if ext in image_extensions:
                         message_elements.append(ImageMessage(url=url))
+                        continue
                     elif ext in audio_extensions:
                         message_elements.append(VoiceMessage(url=url))
+                        continue
                     elif ext in video_extensions:
                         message_elements.append(VideoElement(file=url))
+                        continue
+                    try:
+                        response = requests.head(url, allow_redirects=True, timeout=5)
+                        content_type = response.headers.get('content-type', '').lower()
+                    except Exception as e:
+                        self.logger.warning(f"Failed to get headers for {url}: {str(e)}")
+                        content_type = ''
 
+                    # Check content type first, then fall back to extension
+                    if any(x in content_type for x in ['image', 'png', 'jpg', 'jpeg', 'gif']):
+                        message_elements.append(ImageMessage(url=url))
+                    elif any(x in content_type for x in ['video', 'mp4', 'avi', 'mov']):
+                        message_elements.append(VideoElement(file=url))
+                    elif any(x in content_type for x in ['audio', 'voice', 'mp3', 'wav']):
+                        message_elements.append(VoiceMessage(url=url))
                 except Exception as e:
                     self.logger.error(f"Error processing URL {url}: {str(e)}")
                     continue
