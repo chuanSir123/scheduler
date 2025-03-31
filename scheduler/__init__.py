@@ -1,15 +1,14 @@
 import os
-import sys
 from kirara_ai.workflow.core.block import BlockRegistry
 from kirara_ai.ioc.container import DependencyContainer
 from kirara_ai.workflow.core.workflow.registry import WorkflowRegistry
-from typing import Dict, Any, List
 from kirara_ai.plugin_manager.plugin import Plugin
 from kirara_ai.logger import get_logger
 from .storage import TaskStorage
-from datetime import datetime
 import importlib.resources
 from kirara_ai.workflow.core.workflow.builder import WorkflowBuilder
+from kirara_ai.events.im import IMAdapterStarted
+from kirara_ai.events.listen import listen
 
 from .blocks import CreateTaskBlock,AutoExecuteTools,CreateOneTimeTaskBlock,GetTasksBlock,DeleteTaskBlock,DeleteAllTasksBlock,URLToMessageBlock
 logger = get_logger("Scheduler")
@@ -28,7 +27,7 @@ class SchedulerPlugin(Plugin):
     def on_load(self):
         logger.info("SchedulerPlugin loaded")
         from .scheduler import TaskScheduler
-        self.scheduler = TaskScheduler(self.storage, None)
+        self.scheduler = TaskScheduler(self.storage, None,self.container)
         self.scheduler.start()
         try:
             self.block_registry.register("create_task", "scheduler", CreateTaskBlock)
@@ -77,5 +76,10 @@ class SchedulerPlugin(Plugin):
         if self.scheduler:
             self.scheduler.shutdown()
         logger.info("SchedulerPlugin stopped")
+
+    def setup_event_bus(self):
+        @listen(self.event_bus)
+        def test_event(event: IMAdapterStarted):
+            self.scheduler.adapter = event.im
 
 

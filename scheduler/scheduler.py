@@ -4,23 +4,24 @@ from datetime import datetime, timedelta
 import uuid
 from typing import Optional, List
 from .storage import TaskStorage,ScheduledTask
-from kirara_ai.im.message import IMMessage, TextMessage
 from kirara_ai.logger import get_logger
 import asyncio
-from aiocqhttp import Event
 from kirara_ai.im.adapter import IMAdapter
-from kirara_ai.im.manager import IMManager
 from kirara_ai.im.message import IMMessage, MessageElement, TextMessage
 from kirara_ai.im.sender import ChatSender
-
+from kirara_ai.ioc.container import DependencyContainer
+from kirara_ai.workflow.core.workflow.base import Workflow
+from kirara_ai.workflow.core.execution.executor import WorkflowExecutor
+from kirara_ai.workflow.core.dispatch.registry import DispatchRuleRegistry
 logger = get_logger("TaskScheduler")
 
 
 class TaskScheduler:
-    def __init__(self, storage: TaskStorage, adapter: IMAdapter):
+    def __init__(self, storage: TaskStorage, adapter: IMAdapter,container:DependencyContainer):
         self.storage = storage
         self.scheduler = AsyncIOScheduler()
         self.adapter = adapter
+        self.container = container
 
 
     def start(self):
@@ -73,6 +74,7 @@ class TaskScheduler:
             cron=cron,
             task_content=task_content,
             chat_id=str(target) if target else None,
+            workflow_id = self.container.resolve(Workflow).id,
             created_at=datetime.now()
         )
 
@@ -139,19 +141,31 @@ class TaskScheduler:
     async def _execute_task(self, task: ScheduledTask):
         """执行任务"""
         try:
-            logger.info(f"Starting execution of task {task.id}")
+            logger.info(f"Starting execution of task {task.chat_id}")
             if task.chat_id.startswith("c2c:"):
-                target = ChatSender.from_c2c_chat(task.chat_id.split(":")[1], task.chat_id.split(":")[1], {})
+                target = ChatSender.from_c2c_chat(task.chat_id.split(":")[1], "System", {})
             else:
-                target = ChatSender.from_group_chat(task.chat_id.split(":")[1], task.chat_id.split(":")[0], {})
-            # 直接使用adapter发送消息
-            await self.adapter.send_message(
-                IMMessage(
-                    sender=ChatSender.get_bot_sender(),
-                    message_elements=[TextMessage(task.task_content)]
-                ),
-                target
-            )
+                target = ChatSender.from_group_chat(task.chat_id.split(":")[1], task.chat_id.split(":")[0], "System")
+
+            # 重新调用原task的工作流进行回复
+            active_rules = self.container.resolve(DispatchRuleRegistry).get_active_rules()
+            message = IMMessage(sender=target,message_elements=[TextMessage("(触发定时任务，请根据System的任务内容进行回复，不要提及System)"+task.task_content)])
+            for rule in active_rules:
+                if rule.workflow_id == task.workflow_id:
+                    try:
+                        logger.debug(f"Matched rule {rule}, executing workflow")
+                        with self.container.scoped() as scoped_container:
+                            scoped_container.register(IMAdapter, self.adapter)
+                            scoped_container.register(IMMessage, message)
+                            workflow = rule.get_workflow(scoped_container)
+                            scoped_container.register(Workflow, workflow)
+                            executor = WorkflowExecutor(scoped_container)
+                            scoped_container.register(WorkflowExecutor, executor)
+                            return await executor.run()
+                    except Exception as e:
+                        logger.exception(e)
+                        logger.error(f"Workflow execution failed: {e}")
+                        raise e
 
             logger.info(f"Task {task.id} executed successfully and message sent")
 
@@ -220,6 +234,8 @@ class TaskScheduler:
         self.scheduler.start()
 
     async def create_one_time_task(self, minutes: int, task_content: str, target: Optional[ChatSender]) -> ScheduledTask:
+        logger.debug(self.container.resolve(Workflow).id)
+        logger.debug(target)
         """创建一次性定时任务"""
         task = ScheduledTask(
             id=str(uuid.uuid4()),
@@ -227,6 +243,7 @@ class TaskScheduler:
             task_content=task_content,
             chat_id=str(target) if target else None,
             created_at=datetime.now(),
+            workflow_id = self.container.resolve(Workflow).id,
             is_one_time=True  # 标记为一次性任务
         )
 

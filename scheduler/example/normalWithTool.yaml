@@ -133,9 +133,9 @@ blocks:
   - type: auto:auto_execute_tools
     name: 618ee860-064d-4b25-88dd-3b29a17b52d7
     params:
-      available_block_names: create_task,create_one_time_task,get_tasks,delete_task,delete_all_tasks,text_to_image,web_search_by_keyword,music_search
+      available_block_names: create_task,create_one_time_task,get_tasks,delete_task,delete_all_tasks,text_to_image,web_search_by_keyword,music_search,weather_search,random_girl_video,random_cosplay,random_emoji,sougou_image_search,douyin_video_search,bilibili_search
       max_retries: 3
-      model_name: windsurf/claude-3-7-sonnet
+      model_name:
     position:
       x: 654
       y: 137
