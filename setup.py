@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import io
 import os
 
-version = os.environ.get('RELEASE_VERSION', '0.3.0'
+version = os.environ.get('RELEASE_VERSION', '0.3.9'
 '').lstrip('v')
 
 setup(
@@ -15,7 +15,7 @@ setup(
     },
     install_requires=[
         "apscheduler",
-        "kirara-ai>=3.2.0",
+        "kirara-ai>3.2.0",
     ],
     entry_points={
         'chatgpt_mirai.plugins': [

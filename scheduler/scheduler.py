@@ -149,7 +149,7 @@ class TaskScheduler:
 
             # 重新调用原task的工作流进行回复
             active_rules = self.container.resolve(DispatchRuleRegistry).get_active_rules()
-            message = IMMessage(sender=target,message_elements=[TextMessage("(触发定时任务，请根据System的任务内容进行回复，不要提及System)"+task.task_content)])
+            message = IMMessage(sender=target,message_elements=[TextMessage("(触发定时任务，请根据System的任务内容进行回复，不要提及System)任务内容："+task.task_content)])
             for rule in active_rules:
                 if rule.workflow_id == task.workflow_id:
                     try:

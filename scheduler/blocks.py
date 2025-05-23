@@ -8,7 +8,7 @@ from kirara_ai.im.manager import IMManager
 from kirara_ai.im.message import IMMessage, MessageElement, TextMessage, ImageMessage, VoiceMessage, MediaMessage,VideoElement
 from kirara_ai.im.sender import ChatSender
 from kirara_ai.llm.llm_manager import LLMManager
-from kirara_ai.llm.llm_registry import LLMAbility
+from kirara_ai.llm.model_types import LLMAbility, ModelType
 import re
 from kirara_ai.logger import get_logger
 from kirara_ai.workflow.core.block.registry import BlockRegistry
@@ -82,7 +82,7 @@ class CreateTaskBlock(Block):
 
 def model_name_options_provider(container: DependencyContainer, block: Block) -> List[str]:
     llm_manager: LLMManager = container.resolve(LLMManager)
-    return llm_manager.get_supported_models(LLMAbility.TextChat)
+    return llm_manager.get_supported_models(ModelType.LLM, LLMAbility.TextChat)
 
 class CreateOneTimeTaskBlock(Block):
     """一次性定时任务Block"""
@@ -188,8 +188,11 @@ class AutoExecuteTools(Block):
         for block in registry.get_all_types():
             if block.name in self.block_names:
                 self.available_blocks[block.name] = block
-        this_content = prompt[-1].content
-        this_content = this_content.split("\n")[-1] if "\n" in this_content else this_content
+        last_contents = prompt[-1].content
+        this_content = ""
+        for last_content in last_contents:
+            if last_content.type == "text":
+                this_content += last_content.text
         self.logger.debug(this_content)
         if "触发定时任务" in this_content:
             if "create_one_time_task" in self.available_blocks:
